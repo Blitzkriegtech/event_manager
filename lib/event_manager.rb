@@ -7,22 +7,12 @@ require 'erb'
 # Main file
 # Use a csv parser
 
-def get_hour(reg_time)
-  arr = []
-  arr << reg_time
-  arr.map do |timestamp|
-  DateTime.strptime(timestamp, '%m/%d/%Y %H:%M').hour
-  end
+def get_hour(reg_date_time)
+  DateTime.strptime(reg_date_time, '%m/%d/%Y %H:%M').hour
 end
 
-def count_hour_frequency(reg_time)
-  frequency = Hash.new(0)
-  reg_time.each { |hour| frequency[hour] += 1 } 
-
-  # Find the peak hour
-  max_frequency = frequency.values.max
-  peak_hour = frequency.select { |hour, count| count == max_frequency }.keys
-  peak_hour
+def get_day(reg_date_time)
+  Date::DAYNAMES[DateTime.strptime(reg_date_time, '%m/%d/%Y %H:%M').wday] # use built in ruby constants to get the name of the day instead of  an index number 
 end
 
 def clean_zipcode(zipcode)
@@ -77,19 +67,42 @@ header_converters: :symbol
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
+# initialize an empty array for hours and days
+hours = [] 
+days = []
+
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
-  reg_time = get_hour(row[:regdate])
+  reg_hour = get_hour(row[:regdate])
+  reg_day = get_day(row[:regdate])
   zipcode = clean_zipcode(row[:zipcode])
   phone_numbers = clean_phone_numbers(row[:homephone])
   legislators = legislators_by_zipcode(zipcode)
 
   form_letter = erb_template.result(binding)
-  save_thank_you_letter(id,form_letter)
-  # p name
-  # p legislators
+  save_thank_you_letter(id, form_letter)
   puts "Name: #{name} --> Phone number: #{phone_numbers}"
+
+  hours << reg_hour # append the hours of registration when iterations are done
+  days << reg_day # append the days of registration when iterations are done
 end
-# peak_hour = count_hour_frequency(reg_time)
-# puts "Peak registration hour: #{peak_hour}"
+
+def peak_registration_hours(hours)
+frequency = Hash.new(0)
+hours.each { |hours| frequency[hours] += 1 }
+max_frequency = frequency.values.max
+peak_hours = frequency.select { |hour, count| count == max_frequency }.keys
+peak_hours
+end
+
+def peak_registration_days(days)
+  frequency = Hash.new(0)
+  days.each { |days| frequency[days] +=1 }
+  max_frequency = frequency.values.max
+  peak_days = frequency.select { |days, count| count == max_frequency }.keys
+  peak_days
+end
+
+puts "\nPeak registration hour(s): #{peak_registration_hours(hours)}"
+puts "\nPeak registration day(s): #{peak_registration_days(days)}}"
