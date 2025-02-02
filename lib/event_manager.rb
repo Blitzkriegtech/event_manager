@@ -1,10 +1,30 @@
 # frozen_string_literal: true
-
+require 'date'
+require 'time'
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
 # Main file
 # Use a csv parser
+
+def get_hour(reg_time)
+  arr = []
+  arr << reg_time
+  arr.map do |timestamp|
+  DateTime.strptime(timestamp, '%m/%d/%Y %H:%M').hour
+  end
+end
+
+def count_hour_frequency(reg_time)
+  frequency = Hash.new(0)
+  reg_time.each { |hour| frequency[hour] += 1 } 
+
+  # Find the peak hour
+  max_frequency = frequency.values.max
+  peak_hour = frequency.select { |hour, count| count == max_frequency }.keys
+  peak_hour
+end
+
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
 end
@@ -33,7 +53,7 @@ def legislators_by_zipcode(zip)
       roles: %w[legislatorUpperBody legislatorLowerBody]
     ).officials
   rescue
-    'You can find your representativ by visiting www.commoncause.org/take-action/find-elected-officials'
+    'You can find your representative by visiting www.commoncause.org/take-action/find-elected-officials'
   end
 end
 
@@ -60,6 +80,7 @@ erb_template = ERB.new template_letter
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
+  reg_time = get_hour(row[:regdate])
   zipcode = clean_zipcode(row[:zipcode])
   phone_numbers = clean_phone_numbers(row[:homephone])
   legislators = legislators_by_zipcode(zipcode)
@@ -70,3 +91,5 @@ contents.each do |row|
   # p legislators
   puts "Name: #{name} --> Phone number: #{phone_numbers}"
 end
+# peak_hour = count_hour_frequency(reg_time)
+# puts "Peak registration hour: #{peak_hour}"
