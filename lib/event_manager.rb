@@ -105,4 +105,4 @@ def peak_registration_days(days)
 end
 
 puts "\nPeak registration hour(s): #{peak_registration_hours(hours)}"
-puts "\nPeak registration day(s): #{peak_registration_days(days)}}"
+puts "\nPeak registration day(s): #{peak_registration_days(days)}"
